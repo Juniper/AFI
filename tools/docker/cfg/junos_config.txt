@@ -2,17 +2,17 @@ delete chassis auto-image-upgrade
 delete interfaces fxp0 unit 0 family inet dhcp
 set groups re0 system host-name vcp-vm
 set groups re0 interfaces fxp0 unit 0 family inet address 172.18.0.10/16
-set apply-groups re0 
+set apply-groups re0
 set system services ssh root-login allow
 set system syslog user * any emergency
 set system syslog file messages any notice
 set system syslog file messages authorization info
-set system syslog file interactive-commands interactive-commands any 
+set system syslog file interactive-commands interactive-commands any
 set chassis fpc 0 lite-mode
-set chassis traceoptions flag all 
+set chassis traceoptions flag all
 set interfaces traceoptions file dcd_sks
 set interfaces traceoptions file size 1g
-set interfaces traceoptions flag all 
+set interfaces traceoptions flag all
 set interfaces fxp0 unit 0 family inet
 set forwarding-options forwarding-sandbox green size medium
 set forwarding-options forwarding-sandbox green port p0 interface ge-0/0/0

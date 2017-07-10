@@ -29,7 +29,7 @@ PROG = first-afi-client
 SRCS = Main.cpp
 OBJS=$(subst .cc,.o, $(subst .cpp,.o, $(SRCS)))
 
-CXXFLAGS += -std=c++11 
+CXXFLAGS += -std=c++11
 
 CPPFLAGS += -I. -I$(AFI_INCLUDE)/afi-transport -I$(AFI_INCLUDE)/aft-client
 

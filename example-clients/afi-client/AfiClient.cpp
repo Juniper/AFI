@@ -31,7 +31,7 @@
 // @param[in]
 //     sandbox_name Sandbox name
 // @param[in]
-//     numCfgPorts Number of configured ports 
+//     numCfgPorts Number of configured ports
 // @return 0 - Success, -1 - Failure
 //
 
@@ -118,7 +118,7 @@ AfiClient::addRouteTable (const std::string &rttName,
     //
     // Create a route lookup tree
     //
-    auto treePtr = AftTree::create(AftField("packet.lookupkey"), 
+    auto treePtr = AftTree::create(AftField("packet.lookupkey"),
                                    defaultTragetToken);
     //
     // Stich the optional params
@@ -282,7 +282,7 @@ AfiClient::addIndexTableEntry (AftNodeToken iTableToken,
     insert = AftInsert::create(_sandbox);
 
     AftEntryPtr entry = AftEntry::create(iTableToken,
-                                         entryIndex, 
+                                         entryIndex,
                                          entryTargetToken);
 
     insert->push(entry);
@@ -341,10 +341,10 @@ AfiClient::createList (AftTokenVector tokVec)
 // setInputPortNextNode
 //
 // @brief
-// Set next node for an input port 
+// Set next node for an input port
 //
 // @param[in]
-//     inputPortIndex Input port index 
+//     inputPortIndex Input port index
 // @param[in]
 //     nextToken Next node token
 // @return 0 - Success, -1 - Error
@@ -363,10 +363,10 @@ AfiClient::setInputPortNextNode (AftIndex     inputPortIndex,
 // getOuputPortToken
 //
 // @brief
-// Get token for an output port 
+// Get token for an output port
 //
 // @param[in]
-//     outputPortIndex Output port index 
+//     outputPortIndex Output port index
 // @return Outport port's token
 //
 
@@ -396,7 +396,7 @@ AfiClient::getOuputPortToken(AftIndex outputPortIndex)
 // @param[in]
 //     ovlanStr Outer vlan
 // @param[in]
-//     nextToken Next node token 
+//     nextToken Next node token
 // @return Ethernet encap node's token
 //
 
@@ -472,7 +472,7 @@ AfiClient::addEtherEncapNode(const std::string &dst_mac,
 // @param[in]
 //     innerLabelStr Inner label
 // @param[in]
-//     nextToken Next node token 
+//     nextToken Next node token
 // @return Label encap node's token
 //
 
@@ -573,7 +573,7 @@ AfiClient::addLabelEncap(const std::string &outerLabelStr,
 // Add label decap node
 //
 // @param[in]
-//     nextToken Next node token 
+//     nextToken Next node token
 // @return Label decap node's token
 //
 
@@ -681,7 +681,7 @@ AfiClient::addDiscardNode (void)
 // @return 0 - Success, -1 - Error
 //
 
-int 
+int
 AfiClient::recvHostPathPacket(AftPacketPtr &pkt)
 {
     size_t recvlen;
@@ -689,7 +689,7 @@ AfiClient::recvHostPathPacket(AftPacketPtr &pkt)
     char _data[max_length];
     BOOST_UDP::endpoint sender_endpoint;
 
-    // Block until data has been received successfully or an error occurs. 
+    // Block until data has been received successfully or an error occurs.
     recvlen = _hpUdpSock.receive_from(
                 boost::asio::buffer(_data, max_length), sender_endpoint);
 
@@ -787,16 +787,16 @@ AfiClient::startAfiPktRcvr(void)
 // injectL2Packet
 //
 // @brief
-// Inject layer 2 packet on specified (output) 
+// Inject layer 2 packet on specified (output)
 // port of specified sandbox
 //
-// @param[in] 
+// @param[in]
 //     sandboxId Sandbox index
-// @param[in] 
+// @param[in]
 //     portIndex Output port index
-// @param[in] 
+// @param[in]
 //     l2Packet Pointer to layer 2 packet to be injected
-// @param[in] 
+// @param[in]
 //     l2PacketLen Length of layer 2 packet
 // @return void
 //
@@ -845,7 +845,7 @@ AfiClient::injectL2Packet(AftSandboxId  sandboxId,
 // @brief
 // Handle CLI command
 //
-// @param[in] 
+// @param[in]
 //     command_str CLI command string
 // @return void
 //
@@ -964,10 +964,10 @@ AfiClient::handleCliCommand(std::string const & command_str)
         std::cout << "Adding ether encap node" << std::endl;
         AftNodeToken nextToken = std::strtoull(command_args.at(4).c_str(),NULL,0);;
 
-        AftNodeToken nhEncapToken = addEtherEncapNode(command_args.at(0), 
-                                                      command_args.at(1), 
-                                                      command_args.at(2), 
-                                                      command_args.at(3), 
+        AftNodeToken nhEncapToken = addEtherEncapNode(command_args.at(0),
+                                                      command_args.at(1),
+                                                      command_args.at(2),
+                                                      command_args.at(3),
                                                       nextToken);
 
         std::cout << "Ether encap nexthop token: " << nhEncapToken << std::endl;

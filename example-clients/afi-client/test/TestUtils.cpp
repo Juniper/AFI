@@ -32,109 +32,109 @@
 #include "../Utils.h"
 #include "TestUtils.h"
 
-#define SEND_BUF_SIZE		    1500
-#define ETHER_PAYLOAD_BUF_SIZE	5000
+#define SEND_BUF_SIZE           1500
+#define ETHER_PAYLOAD_BUF_SIZE  5000
 
-#define SEND_BUF_STR_SIZE	    5000
+#define SEND_BUF_STR_SIZE       5000
 
 
 int SendRawEth (const std::string &ifNameStr,
                 TestPacketLibrary::TestPacketId tcPktNum)
 {
     int         i;
-	int         ether_type;
-	char       *ether_payload = NULL;
-	int        *dst_mac;
+    int         ether_type;
+    char       *ether_payload = NULL;
+    int        *dst_mac;
 
-	int         sockfd;
-	struct      ifreq if_idx;
-	struct      ifreq if_mac;
-	int         tx_len = 0;
-	char        sendbuf[SEND_BUF_SIZE];
-	char        sendbuf_str[SEND_BUF_STR_SIZE];
-	struct      ether_header *eh = (struct ether_header *) sendbuf;
-	struct      iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
-	struct      sockaddr_ll socket_address;
-	char        ifName[IFNAMSIZ];
-	int         byte_count;
+    int         sockfd;
+    struct      ifreq if_idx;
+    struct      ifreq if_mac;
+    int         tx_len = 0;
+    char        sendbuf[SEND_BUF_SIZE];
+    char        sendbuf_str[SEND_BUF_STR_SIZE];
+    struct      ether_header *eh = (struct ether_header *) sendbuf;
+    struct      iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
+    struct      sockaddr_ll socket_address;
+    char        ifName[IFNAMSIZ];
+    int         byte_count;
 
     TestPacket* testPkt = testPacketLibrary.getTestPacket(tcPktNum);
 
-	ether_type    = testPkt->getEtherType();
-	dst_mac       = testPkt->getDstMac();
-	ether_payload = testPkt->getEtherPayloadStr();
+    ether_type    = testPkt->getEtherType();
+    dst_mac       = testPkt->getDstMac();
+    ether_payload = testPkt->getEtherPayloadStr();
 
     strncpy(ifName, ifNameStr.c_str(), IFNAMSIZ);
-	ifName[IFNAMSIZ - 1] = '\0';
+    ifName[IFNAMSIZ - 1] = '\0';
 
-	// RAW socket
-	if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
-	    perror("socket");
-	}
+    // RAW socket
+    if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
+        perror("socket");
+    }
 
-	// Get interface index */
-	memset(&if_idx, 0, sizeof(struct ifreq));
-	strncpy(if_idx.ifr_name, ifName, IFNAMSIZ-1);
+    // Get interface index */
+    memset(&if_idx, 0, sizeof(struct ifreq));
+    strncpy(if_idx.ifr_name, ifName, IFNAMSIZ-1);
 
-	if (ioctl(sockfd, SIOCGIFINDEX, &if_idx) < 0) {
-	    perror("SIOCGIFINDEX");
-	}
+    if (ioctl(sockfd, SIOCGIFINDEX, &if_idx) < 0) {
+        perror("SIOCGIFINDEX");
+    }
 
-	// Get the MAC address of the interface to send on 
-	memset(&if_mac, 0, sizeof(struct ifreq));
-	strncpy(if_mac.ifr_name, ifName, IFNAMSIZ-1);
-	if (ioctl(sockfd, SIOCGIFHWADDR, &if_mac) < 0) {
-	    perror("SIOCGIFHWADDR");
+    // Get the MAC address of the interface to send on
+    memset(&if_mac, 0, sizeof(struct ifreq));
+    strncpy(if_mac.ifr_name, ifName, IFNAMSIZ-1);
+    if (ioctl(sockfd, SIOCGIFHWADDR, &if_mac) < 0) {
+        perror("SIOCGIFHWADDR");
     }
 
     //
-	// Build Ethernet header
-	//
-	memset(sendbuf, 0, SEND_BUF_SIZE);
+    // Build Ethernet header
+    //
+    memset(sendbuf, 0, SEND_BUF_SIZE);
 
-	// Destination MAC
-	for (i = 0; i < MAC_ADDR_LEN; i++) {
-		eh->ether_dhost[i] = dst_mac[i];
-	}
+    // Destination MAC
+    for (i = 0; i < MAC_ADDR_LEN; i++) {
+        eh->ether_dhost[i] = dst_mac[i];
+    }
 
-	// Source MAC
-	for (i = 0; i < MAC_ADDR_LEN; i++) {
-		eh->ether_shost[i] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[i];
-	}
+    // Source MAC
+    for (i = 0; i < MAC_ADDR_LEN; i++) {
+        eh->ether_shost[i] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[i];
+    }
 
-	// Ethertype field
-	eh->ether_type = htons(ether_type);
-	tx_len        += sizeof(struct ether_header);
+    // Ethertype field
+    eh->ether_type = htons(ether_type);
+    tx_len        += sizeof(struct ether_header);
 
-	getRidOfSpacesFromString(ether_payload);
+    getRidOfSpacesFromString(ether_payload);
 
-	byte_count = convertHexStringToBinary(ether_payload, 
-                                          &sendbuf[tx_len], 
+    byte_count = convertHexStringToBinary(ether_payload,
+                                          &sendbuf[tx_len],
                                           (SEND_BUF_SIZE - tx_len));
 
-	tx_len += byte_count;
+    tx_len += byte_count;
 
-	// Index of the network device
-	socket_address.sll_ifindex = if_idx.ifr_ifindex;
-	// Address length
-	socket_address.sll_halen = ETH_ALEN;
+    // Index of the network device
+    socket_address.sll_ifindex = if_idx.ifr_ifindex;
+    // Address length
+    socket_address.sll_halen = ETH_ALEN;
 
-	// Destination MAC 
-	for (i = 0; i < MAC_ADDR_LEN; i++) {
-		socket_address.sll_addr[i] = dst_mac[i];
-	}
+    // Destination MAC
+    for (i = 0; i < MAC_ADDR_LEN; i++) {
+        socket_address.sll_addr[i] = dst_mac[i];
+    }
 
-	std::cout << "Sending packet on interface " << ifName << "..." << std::endl;
+    std::cout << "Sending packet on interface " << ifName << "..." << std::endl;
     pktTrace("Raw socket send", sendbuf, tx_len);
 
-	// Send packet 
-	if (sendto(sockfd, sendbuf, tx_len, 0, 
-	    (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
-	    std::cout << "Error: Send failed!" << std::endl;
-		return -1;
-	} else {
-	    std::cout << "Send success!!!" << std::endl;
-		return 0;
-	}
+    // Send packet
+    if (sendto(sockfd, sendbuf, tx_len, 0,
+        (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
+        std::cout << "Error: Send failed!" << std::endl;
+        return -1;
+    } else {
+        std::cout << "Send success!!!" << std::endl;
+        return 0;
+    }
 }
 

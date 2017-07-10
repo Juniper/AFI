@@ -1,5 +1,5 @@
 #
-# README 
+# README
 #
 # Advanced Forwarding Interface : AFI client examples
 #
@@ -41,18 +41,18 @@ Example run
 ==========================
 
 This example run build following forwarding path topology
- 
-  |                                        | 
-  |                                        | 
-  |                /\                      | 
-  |               /  \                     | 
-  o------------->/ R1-\---->[EthEncap]---->o
-  |p2           /______\                 p4| 
-  |           Routing Table                | 
-  |         R1 = 103.30.40.0/24            |
-  |                                        | 
+
   |                                        |
- 
+  |                                        |
+  |                /\                      |
+  |               /  \                     |
+  o------------->/ R1-\---->[EthEncap]---->o
+  |p2           /______\                 p4|
+  |           Routing Table                |
+  |         R1 = 103.30.40.0/24            |
+  |                                        |
+  |                                        |
+
 root@495874a2ed47:~/afi/example-clients/afi-client# ./run-afi-client 128.0.0.16:50051 128.0.0.16:9002
 D0425 21:24:10.218603225   13998 ev_posix.c:101]             Using polling engine: poll
 

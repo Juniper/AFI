@@ -35,7 +35,7 @@ while [  $COUNTER -lt 8 ]; do
         log_debug "interface tap$COUNTER exists"
     else
         run_command "ip tuntap add mode tap tap$COUNTER"
-    fi   
+    fi
 
     #
     # ip link set tap0 address 32:26:0A:2E:CC:F0
@@ -54,7 +54,7 @@ IP_ADDR_MASK="255.255.255.0"
 COUNTER=0
 while [  $COUNTER -lt 8 ]; do
     #
-    # ifconfig tap0 103.30.00.3 netmask 255.255.255.0 up 
+    # ifconfig tap0 103.30.00.3 netmask 255.255.255.0 up
     #
     run_command "ifconfig tap$COUNTER $IP_ADDR_PREFIX$COUNTER$IP_ADDR_POSTFIX netmask $IP_ADDR_MASK up"
     run_command "ifconfig tap$COUNTER"
@@ -66,14 +66,14 @@ exit 0
 run_command "brctl show"
 
 #for interface in tap0 tap1 tap2 tap3 tap4 tap5 tap6 tap7
-#do 
+#do
 #    echo Deleting interface $interface
 #    ip link delete $interface
 #done
 
 
 #for interface in tap0 tap1 tap2 tap3 tap4 tap5 tap6 tap7
-#do 
+#do
 #    echo Clear all IP addresses configured on interface $interface
 #    ip addr flush dev $interface
 #done

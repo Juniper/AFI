@@ -64,12 +64,12 @@
 
 //
 // @class   AfiClient
-// @brief   Implements a sample AFI client 
+// @brief   Implements a sample AFI client
 //
 class AfiClient
 {
 public:
-    //  
+    //
     // Constructor
     //
     AfiClient(boost::asio::io_service &ioService,
@@ -108,7 +108,7 @@ public:
         }
     }
 
-    //  
+    //
     // Destructor
     //
     ~AfiClient();

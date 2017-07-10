@@ -64,8 +64,8 @@
 // @return  file descriptor
 //
 
-int 
-TapIf::tapAlloc(char *dev, int flags) 
+int
+TapIf::tapAlloc(char *dev, int flags)
 {
 
   struct ifreq ifr;
@@ -75,9 +75,9 @@ TapIf::tapAlloc(char *dev, int flags)
 
   snprintf(clonedev, DEVICE_FILE_NAME_MAX_LEN, "%s", "/dev/net/tun");
 
-  if( (fd = open(clonedev , O_RDWR)) < 0 ) { 
+  if( (fd = open(clonedev , O_RDWR)) < 0 ) {
     perror("Opening /dev/net/tun");
-    return fd; 
+    return fd;
   }
 
   memset(&ifr, 0, sizeof(ifr));
@@ -88,7 +88,7 @@ TapIf::tapAlloc(char *dev, int flags)
     strncpy(ifr.ifr_name, dev, IFNAMSIZ);
   }
 
-  if( (err = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0 ) { 
+  if( (err = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0 ) {
     perror("ioctl(TUNSETIFF)");
     close(fd);
     return err;
@@ -96,7 +96,7 @@ TapIf::tapAlloc(char *dev, int flags)
 
   strcpy(dev, ifr.ifr_name);
 
-  return fd; 
+  return fd;
 }
 
 //
@@ -110,7 +110,7 @@ TapIf::tapAlloc(char *dev, int flags)
 // @return  0 - Success, -1 - Error
 //
 
-int 
+int
 TapIf::ifRead(void)
 {
     int ret;
@@ -139,7 +139,7 @@ TapIf::ifRead(void)
         /* data from tun/tap: just read it and write it to the network */
 
         nread = read(_tapFd, data, max_length);
-        if (nread < 0){ 
+        if (nread < 0){
             perror("Reading data");
             exit(1);
         }

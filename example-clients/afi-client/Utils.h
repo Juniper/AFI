@@ -45,12 +45,12 @@ public:
   }
 };
 
-int convertHexStringToBinary(const char* source, 
-                             char* target_buff, 
+int convertHexStringToBinary(const char* source,
+                             char* target_buff,
                              int   target_buff_len);
 void getRidOfSpacesFromString(char* source);
-extern int  convertHexPktStrToPkt(char* hex_pkt_str, 
-                                  char* pkt_buff, 
+extern int  convertHexPktStrToPkt(char* hex_pkt_str,
+                                  char* pkt_buff,
                                   int pkt_buff_len);
 extern void pktTrace(const std::string &ctx, char *pkt, int pkt_len);
 

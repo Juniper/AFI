@@ -50,7 +50,7 @@ IP_ADDR_MASK="255.255.255.0"
 COUNTER=0
 while [  $COUNTER -lt 8 ]; do
     #
-    # ifconfig vmx_link0 103.30.00.2 netmask 255.255.255.0 up 
+    # ifconfig vmx_link0 103.30.00.2 netmask 255.255.255.0 up
     #
     run_command  "ifconfig vmx_link$COUNTER $IP_ADDR_PREFIX$COUNTER$IP_ADDR_POSTFIX netmask $IP_ADDR_MASK up"
     let COUNTER+=1
@@ -66,8 +66,8 @@ done
 #
 # Display arp entries
 #
-# arp -n 
-# arp -a -n 
+# arp -n
+# arp -a -n
 #
 #
 # Deleting arp entry

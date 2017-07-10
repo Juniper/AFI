@@ -26,10 +26,10 @@ AFI_INCLUDE = ../../../$(AFI_VERSION)/include
 CXX = g++
 PROG = afi-client
 
-SRCS = Main.cpp AfiClient.cpp Utils.cpp 
+SRCS = Main.cpp AfiClient.cpp Utils.cpp
 OBJS=$(subst .cc,.o, $(subst .cpp,.o, $(SRCS)))
 
-CXXFLAGS += -g -O0 -std=c++11 
+CXXFLAGS += -g -O0 -std=c++11
 
 CPPFLAGS += -I. -I$(AFI_INCLUDE)/afi-transport -I$(AFI_INCLUDE)/aft-client
 

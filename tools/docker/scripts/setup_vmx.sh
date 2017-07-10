@@ -54,7 +54,7 @@ if [ ! -d "$VMX_DIR" ]; then
 fi
 
 #
-# Chekc if VMX is already running 
+# Chekc if VMX is already running
 #
 cd $VMX_DIR
 vmx_status=`./vmx.sh --status | grep "Check if vMX is running" | grep No | wc -l`
@@ -110,9 +110,9 @@ $SED -i -e "s/sleep 2/sleep 10/g" $VMX_DIR/scripts/kvm/common/vmx_kvm_system_set
 cd $VMX_DIR
 ./vmx.sh --start
 if [ $? -ne 0 ]; then
-   log_error "VMX did not start successfully" 
+   log_error "VMX did not start successfully"
   ./vmx.sh --stop
-   log_prominent "VMX did not start successfully. Please resolve issue and try again" 
+   log_prominent "VMX did not start successfully. Please resolve issue and try again"
    exit 1
 fi
 
@@ -128,7 +128,7 @@ vmx_status=`./vmx.sh --status | grep "Check if vMX is running" | grep No | wc -l
 if [ "$vmx_status" == "0" ]; then
     ./vmx.sh --bind-dev
     if [ $? -ne 0 ]; then
-       log_error "vmx.sh --bind-dev not successful" 
+       log_error "vmx.sh --bind-dev not successful"
       ./vmx.sh --stop
        exit 1
     fi
@@ -139,45 +139,45 @@ if [ "$vmx_status" == "0" ]; then
     # Show Linux bridges
     #
     $BRCTL show
- 
+
     log_prominent "!!!!VMX started!!!!"
- 
+
     log_prominent "VMX links configuration"
     run_command $SCRIPTS_DIR/config_vmx_links.sh
- 
+
     log_prominent "Junos configuration"
     run_command $SCRIPTS_DIR/config_junos.exp
- 
+
     log_prominent "Disabling flow cache"
     run_command $SCRIPTS_DIR/disable_flow_cache.exp
- 
+
     #
     # Restart FPC 0 is needed to complete the
     # flow cache disabling
     log_prominent "Restarting FPC0"
     run_command $SCRIPTS_DIR/restart_fpc0.exp
- 
+
     #
     # Give some more time FPC to restart
     #
     SLEEP_SECONDS=5
     log_prominent "Sleeping for $SLEEP_SECONDS more seconds"
     sleep $SLEEP_SECONDS
- 
+
     log_prominent "Config VFP ext interface"
     run_command $SCRIPTS_DIR/config_vfp_ext_if.exp
- 
+
     log_prominent "Config FPC0"
     run_command $SCRIPTS_DIR/config_fpc0.exp
- 
+
     log_prominent "Configure br-int-vmx1 IP address"
     run_command $SCRIPTS_DIR/config_br-int-vmx1.sh
- 
+
     log_prominent "Dump debug info"
     run_command $SCRIPTS_DIR/dump_debug_info.exp
 
     log_prominent "VMX Setup Complete! Happy AFI client programming!!!"
-else 
+else
     log_prominent "VMX did not start. Please resolve the issue"
     exit 1
 fi

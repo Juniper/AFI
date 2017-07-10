@@ -42,8 +42,8 @@ me=`basename "$0"`
 function run_command {
     DATE_STR=`$DATE`
     echo "[$DATE_STR] [$me] Executing command \"$@\" ..."
-    $@  
-    if [ $? -eq 0 ] 
+    $@
+    if [ $? -eq 0 ]
     then
       DATE_STR=`$DATE`
       echo "[$DATE_STR] [$me] Command \"$@ \" : SUCCESS"
@@ -51,7 +51,7 @@ function run_command {
       DATE_STR=`$DATE`
       echo "[$DATE_STR] [$me] Command \"$@ \": ERROR"
       exit 1
-    fi  
+    fi
 }
 
 #
@@ -65,13 +65,13 @@ function log_prominent {
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "$DATE_STR [$me]"
-    echo $@ 
+    echo $@
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo ""
     echo ""
-}  
+}
 
 #
 # Error log
@@ -81,11 +81,11 @@ function log_error {
     echo ""
     echo "~~~~~~~~ ERROR ~~~~~~~~~~~~~~~"
     echo "~~~~~~~~ ERROR ~~~~~~~~~~~~~~~"
-    echo "[$DATE_STR] [$me] ERROR: $@" 
+    echo "[$DATE_STR] [$me] ERROR: $@"
     echo "~~~~~~~~ ERROR ~~~~~~~~~~~~~~~"
     echo "~~~~~~~~ ERROR ~~~~~~~~~~~~~~~"
     echo ""
-}  
+}
 
 #
 # Debug log
@@ -94,7 +94,7 @@ function log_debug {
     DATE_STR=`$DATE`
     echo ""
     echo "~~~~~~~~ DEBUG ~~~~~~~~~~~~~~~"
-    echo "[$DATE_STR] [$me] DEBUG: $@" 
+    echo "[$DATE_STR] [$me] DEBUG: $@"
     echo "~~~~~~~~ DEBUG ~~~~~~~~~~~~~~~"
     echo ""
-}  
+}

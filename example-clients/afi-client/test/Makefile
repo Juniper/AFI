@@ -1,5 +1,5 @@
 #
-# Makefile.inc -- Makefile to build test 
+# Makefile.inc -- Makefile to build test
 #
 # Advanced Forwarding Interface : AFI client examples
 #
@@ -69,7 +69,7 @@ LDLIBS = -lafi-transport \
          -lpthread \
          -lboost_thread
 
-LIBS = gtest.a 
+LIBS = gtest.a
 
 all:    $(PROG)
 	@echo $(PROG) has been compiled

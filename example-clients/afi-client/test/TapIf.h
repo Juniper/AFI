@@ -24,36 +24,36 @@
 
 #include "../Utils.h"
 
-class TapIf 
+class TapIf
 {
 public:
     TapIf (const std::string &ifNameStr) {
-	    strncpy(_ifName, ifNameStr.c_str(), IFNAMSIZ);
-		_ifName[IFNAMSIZ - 1] = '\0';
-	}
+        strncpy(_ifName, ifNameStr.c_str(), IFNAMSIZ);
+        _ifName[IFNAMSIZ - 1] = '\0';
+    }
 
-	~TapIf () {
-	}
+    ~TapIf () {
+    }
 
-	int init(void) {
-		int tapFd;
-		int flags = IFF_TAP;
+    int init(void) {
+        int tapFd;
+        int flags = IFF_TAP;
 
-		/* initialize tun/tap interface */
-		if ( (tapFd = tapAlloc(_ifName, flags | IFF_NO_PI)) < 0 ) {
-			std::cout << "Error connecting to tap interface " << _ifName << std::endl;
-			return -1;
-		}
-		_tapFd = tapFd;
-		return _tapFd;
-	}
+        /* initialize tun/tap interface */
+        if ( (tapFd = tapAlloc(_ifName, flags | IFF_NO_PI)) < 0 ) {
+            std::cout << "Error connecting to tap interface " << _ifName << std::endl;
+            return -1;
+        }
+        _tapFd = tapFd;
+        return _tapFd;
+    }
 
     int tapAlloc(char *dev, int flags);
-	int ifRead(void);
+    int ifRead(void);
 
 private:
     char _ifName[IFNAMSIZ];
-	int  _tapFd;
+    int  _tapFd;
 };
 
 #endif // __TapIf__
