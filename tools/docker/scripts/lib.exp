@@ -21,7 +21,7 @@
 exp_internal -f exp_internal.log.txt 0;
 
 #
-# These VCP and VFP console port must match with 
+# These VCP and VFP console port must match with
 # console port configured in cfg/vmx.conf
 #
 set debug_level            1
@@ -102,7 +102,7 @@ proc login_vcp_console {} {
     send "\r"
 
     #
-    # While loop to take care of 
+    # While loop to take care of
     # boot menu appearing multiple times
     #
     while true {
@@ -195,7 +195,7 @@ proc login_vcp_ssh {} {
     set re_cli_prompt          "root@vcp-vm>"
     set re_cli_config_prompt   "root@vcp-vm#"
     #
-    # Set 10 seconds 
+    # Set 10 seconds
     #
     set timeout 10
 
@@ -350,7 +350,7 @@ proc login_vfp_ssh {} {
     global vfp_username
     global vfp_password
     #
-    # Set 10 seconds 
+    # Set 10 seconds
     #
     set timeout 10
 

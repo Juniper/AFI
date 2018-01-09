@@ -24,7 +24,7 @@
 //
 // Usage
 //
-int 
+int
 displayUsage (void)
 {
     std::cout << std::endl;
@@ -45,7 +45,7 @@ displayUsage (void)
 //
 // AFI client main
 //
-int 
+int
 main(int argc, char *argv[])
 {
     if (argc != 3) {
@@ -61,11 +61,11 @@ main(int argc, char *argv[])
                         afiServerAddr,            // AFI server address
                         afiHostpathAddr,          // AFI hostpath address
                         AFT_CLIENT_HOSTPATH_PORT, // jnx/AftPacket.h
-                        true,                     // start hostpath server 
+                        true,                     // start hostpath server
                         false);                   // tracing
 
     //
-    // Start this AFI client's 
+    // Start this AFI client's
     // command line interface
     //
     afiClient.cli();

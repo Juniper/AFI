@@ -31,7 +31,7 @@
 // @param[in]
 //     sandbox_name Sandbox name
 // @param[in]
-//     numCfgPorts Number of configured ports 
+//     numCfgPorts Number of configured ports
 // @return 0 - Success, -1 - Failure
 //
 
@@ -107,7 +107,6 @@ AfiClient::addRouteTable (const std::string &rttName,
                           AftNodeToken defaultTragetToken)
 {
     AftNodeToken        rttNodeToken;
-    AftNodeToken        discardNodeToken;
     AftInsertPtr        insert;
 
     //
@@ -118,7 +117,7 @@ AfiClient::addRouteTable (const std::string &rttName,
     //
     // Create a route lookup tree
     //
-    auto treePtr = AftTree::create(AftField("packet.lookupkey"), 
+    auto treePtr = AftTree::create(AftField("packet.lookupkey"),
                                    defaultTragetToken);
     //
     // Stich the optional params
@@ -150,14 +149,14 @@ AfiClient::addRouteTable (const std::string &rttName,
 // @param[in]
 //     prefix Route prefix
 // @param[in]
-//     routeTragetToken Route target token
+//     routeTargetToken Route target token
 // @return 0 - Success, -1 - Error
 //
 
 int
 AfiClient::addRoute (AftNodeToken       rttNodeToken,
                      const std::string &prefix,
-                     AftNodeToken       routeTragetToken)
+                     AftNodeToken       routeTargetToken)
 {
     AftInsertPtr        insert;
     AftNodeToken        outputPortToken;
@@ -187,13 +186,13 @@ AfiClient::addRoute (AftNodeToken       rttNodeToken,
     insert = AftInsert::create(_sandbox);
 
     std::cout <<"Adding route ";
-    std::cout << prefix << " ---> Node token " << routeTragetToken << std::endl;
+    std::cout << prefix << " ---> Node token " << routeTargetToken << std::endl;
 
     //
     // Create a route
     //
     AftEntryPtr entryPtr = AftEntry::create(rttNodeToken, key,
-                                            routeTragetToken);
+                                            routeTargetToken);
 
     //
     // Set the optional params for Entry
@@ -210,6 +209,34 @@ AfiClient::addRoute (AftNodeToken       rttNodeToken,
     // Send all the nodes to the sandbox
     //
     _sandbox->send(insert);
+
+    return 0;
+}
+
+//
+// @fn
+// enablePunting
+//
+// @brief
+// Enable punting on a port
+//
+// @param[in]
+//     portIndex Port Index
+// @param[in]
+//     tapIfname Name of the Linux tap interface
+// @return 0 - Success, -1 - Error
+//
+int
+AfiClient::enablePunting (AftIndex          portIndex,
+                          const std::string &tapIfname)
+{
+    if (_puntingPorts[portIndex].initialized()) {
+        std::cout << "Punting already enabled for port" << portIndex << std::endl;
+        return -1;
+    }
+
+    TapIf &tapIf = _puntingPorts[portIndex];
+    tapIf.init(portIndex, tapIfname);
 
     return 0;
 }
@@ -282,7 +309,7 @@ AfiClient::addIndexTableEntry (AftNodeToken iTableToken,
     insert = AftInsert::create(_sandbox);
 
     AftEntryPtr entry = AftEntry::create(iTableToken,
-                                         entryIndex, 
+                                         entryIndex,
                                          entryTargetToken);
 
     insert->push(entry);
@@ -341,10 +368,10 @@ AfiClient::createList (AftTokenVector tokVec)
 // setInputPortNextNode
 //
 // @brief
-// Set next node for an input port 
+// Set next node for an input port
 //
 // @param[in]
-//     inputPortIndex Input port index 
+//     inputPortIndex Input port index
 // @param[in]
 //     nextToken Next node token
 // @return 0 - Success, -1 - Error
@@ -363,10 +390,10 @@ AfiClient::setInputPortNextNode (AftIndex     inputPortIndex,
 // getOuputPortToken
 //
 // @brief
-// Get token for an output port 
+// Get token for an output port
 //
 // @param[in]
-//     outputPortIndex Output port index 
+//     outputPortIndex Output port index
 // @return Outport port's token
 //
 
@@ -396,7 +423,7 @@ AfiClient::getOuputPortToken(AftIndex outputPortIndex)
 // @param[in]
 //     ovlanStr Outer vlan
 // @param[in]
-//     nextToken Next node token 
+//     nextToken Next node token
 // @return Ethernet encap node's token
 //
 
@@ -472,7 +499,7 @@ AfiClient::addEtherEncapNode(const std::string &dst_mac,
 // @param[in]
 //     innerLabelStr Inner label
 // @param[in]
-//     nextToken Next node token 
+//     nextToken Next node token
 // @return Label encap node's token
 //
 
@@ -573,7 +600,7 @@ AfiClient::addLabelEncap(const std::string &outerLabelStr,
 // Add label decap node
 //
 // @param[in]
-//     nextToken Next node token 
+//     nextToken Next node token
 // @return Label decap node's token
 //
 
@@ -681,7 +708,7 @@ AfiClient::addDiscardNode (void)
 // @return 0 - Success, -1 - Error
 //
 
-int 
+int
 AfiClient::recvHostPathPacket(AftPacketPtr &pkt)
 {
     size_t recvlen;
@@ -689,7 +716,7 @@ AfiClient::recvHostPathPacket(AftPacketPtr &pkt)
     char _data[max_length];
     BOOST_UDP::endpoint sender_endpoint;
 
-    // Block until data has been received successfully or an error occurs. 
+    // Block until data has been received successfully or an error occurs.
     recvlen = _hpUdpSock.receive_from(
                 boost::asio::buffer(_data, max_length), sender_endpoint);
 
@@ -717,9 +744,13 @@ AfiClient::recvHostPathPacket(AftPacketPtr &pkt)
     std::cout << "pkt->dataSize(): " << pkt->dataSize() << " bytes" << std::endl;
 
 
-    std::cout << "Data: Received " << recvlen << "bytes" << std::endl;
+    std::cout << "Data: Received " << recvlen << " bytes" << std::endl;
 
     pktTrace("pkt data", (char *)(pkt->data()), pkt->dataSize());
+
+    TapIf &tapIf = _puntingPorts[pkt->portIndex()];
+    if (tapIf.initialized())
+        tapIf.ifWrite(pkt->dataSize(), pkt->data());
 
     return 0;
 }
@@ -787,16 +818,16 @@ AfiClient::startAfiPktRcvr(void)
 // injectL2Packet
 //
 // @brief
-// Inject layer 2 packet on specified (output) 
+// Inject layer 2 packet on specified (output)
 // port of specified sandbox
 //
-// @param[in] 
+// @param[in]
 //     sandboxId Sandbox index
-// @param[in] 
+// @param[in]
 //     portIndex Output port index
-// @param[in] 
+// @param[in]
 //     l2Packet Pointer to layer 2 packet to be injected
-// @param[in] 
+// @param[in]
 //     l2PacketLen Length of layer 2 packet
 // @return void
 //
@@ -845,7 +876,7 @@ AfiClient::injectL2Packet(AftSandboxId  sandboxId,
 // @brief
 // Handle CLI command
 //
-// @param[in] 
+// @param[in]
 //     command_str CLI command string
 // @return void
 //
@@ -887,6 +918,7 @@ AfiClient::handleCliCommand(std::string const & command_str)
         std::cout << "\t add-label-decap <next-node-token>" << std::endl;
         std::cout << "\t get-output-port-token <ouput-port-index>" << std::endl;
         std::cout << "\t add-route <rtt-token> <prefix> <next-node-token>" << std::endl;
+        std::cout << "\t punt-to-linux <port-index> <linux-tap-ifname>" << std::endl;
         std::cout << "\t inject-l2-pkt <sandbox-index> <port-index>: Inject layer 2 packet" << std::endl;
         std::cout << "\t history " << std::endl;
         std::cout << "\t clear-history " << std::endl;
@@ -964,10 +996,10 @@ AfiClient::handleCliCommand(std::string const & command_str)
         std::cout << "Adding ether encap node" << std::endl;
         AftNodeToken nextToken = std::strtoull(command_args.at(4).c_str(),NULL,0);;
 
-        AftNodeToken nhEncapToken = addEtherEncapNode(command_args.at(1), 
-                                                      command_args.at(0), 
-                                                      command_args.at(2), 
-                                                      command_args.at(3), 
+        AftNodeToken nhEncapToken = addEtherEncapNode(command_args.at(1),
+                                                      command_args.at(0),
+                                                      command_args.at(2),
+                                                      command_args.at(3),
                                                       nextToken);
 
         std::cout << "Ether encap nexthop token: " << nhEncapToken << std::endl;
@@ -1017,9 +1049,20 @@ AfiClient::handleCliCommand(std::string const & command_str)
             return;
         }
         AftNodeToken rttToken = std::strtoull(command_args.at(0).c_str(), NULL, 0);
-        AftNodeToken routeTragetToken = std::strtoull(command_args.at(2).c_str(), NULL, 0);
+        AftNodeToken routeTargetToken = std::strtoull(command_args.at(2).c_str(), NULL, 0);
 
-        addRoute(rttToken, command_args.at(1), routeTragetToken);
+        addRoute(rttToken, command_args.at(1), routeTargetToken);
+
+    } else  if (command.compare("punt-to-linux") == 0) {
+        if (command_args.size() != 2) {
+            std::cout << "Please provide port index and name of the Linux tap interface" << std::endl;
+            std::cout << "Example: punt-to-linux 0 tap0" << std::endl;
+            return;
+        }
+        AftIndex      portIndex = std::strtoull(command_args.at(0).c_str(), NULL, 0);    // Port Index
+        std::string   tapIfname = command_args.at(1);                                    // Tap Ifname
+
+        enablePunting(portIndex, tapIfname);
 
     } else  if ((command.compare("pkt") == 0) ||
                 (command.compare("inject-l2-pkt") == 0)) {

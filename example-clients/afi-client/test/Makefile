@@ -1,5 +1,5 @@
 #
-# Makefile.inc -- Makefile to build test 
+# Makefile.inc -- Makefile to build test
 #
 # Advanced Forwarding Interface : AFI client examples
 #
@@ -30,7 +30,7 @@ PROG = afi-gtest
 GTEST_DIR = ../../../../downloads/googletest-release-1.8.0/googletest
 AFI_DIR = ..
 
-SRCS = AfiGTest.cpp TestUtils.cpp TestPacket.cpp TapIf.cpp $(AFI_DIR)/AfiClient.cpp $(AFI_DIR)/Utils.cpp
+SRCS = AfiGTest.cpp TestUtils.cpp TestPacket.cpp $(AFI_DIR)/AfiClient.cpp $(AFI_DIR)/TapIf.cpp $(AFI_DIR)/Utils.cpp
 
 OBJS=$(subst .cc,.o, $(subst .cpp,.o, $(SRCS)))
 
@@ -69,7 +69,7 @@ LDLIBS = -lafi-transport \
          -lpthread \
          -lboost_thread
 
-LIBS = gtest.a 
+LIBS = gtest.a
 
 all:    $(PROG)
 	@echo $(PROG) has been compiled

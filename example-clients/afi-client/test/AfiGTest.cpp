@@ -24,14 +24,13 @@
 #include "gtest/gtest.h"
 #include "TestPacket.h"
 #include "TestUtils.h"
-#include "TapIf.h"
 #include "../AfiClient.h"
 #include <iostream>
 #include <iomanip>
 #include <ctime>
 
 //
-// Test setup  
+// Test setup
 //
 //  +-------------------------------------------------------------------+
 //  | mx86 server                                                       |
@@ -60,18 +59,18 @@
 //  |   |   |ge-0/0/0 ... ge-0/0/7|                                 |   |
 //  |   |   +---o-o-o-o-o-o-o-o---+                                 |   |
 //  |   |       |             |                                     |   |
-//  |   |       |     ...     |                                     |   | 
-//  |   |       |             |                                     |   | 
-//  |   |       |             |        ,-----.                      |   | 
-//  |   |       |             |        |     | tap7                 |   | 
+//  |   |       |     ...     |                                     |   |
+//  |   |       |             |                                     |   |
+//  |   |       |             |        ,-----.                      |   |
+//  |   |       |             |        |     | veth7                |   |
 //  |   |       |             `--------o     o----                  |   |
 //  |   |       |                      |_____|                      |   |
 //  |   |       |                     vmx_link7                     |   |
 //  |   |       |                        .                          |   |
 //  |   |       |                        .                          |   |
 //  |   |       |                        .                          |   |
-//  |   |       |                      ,-----.                      |   | 
-//  |   |       |                      |     | tap0                 |   |  
+//  |   |       |                      ,-----.                      |   |
+//  |   |       |                      |     | veth0                |   |
 //  |   |       `----------------------o     o----                  |   |
 //  |   |                              |_____|                      |   |
 //  |   |                             vmx_link0                     |   |
@@ -115,18 +114,18 @@
 // [edit]
 // root@vcp-vm#
 //
-// root@de5cf35cd169:~# ifconfig | grep tap
-// tap0      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f0
-// tap1      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f1
-// tap2      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f2
-// tap3      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f3
-// tap4      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f4
-// tap5      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f5
-// tap6      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f6
-// tap7      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f7
+// root@de5cf35cd169:~# for i in $(seq 0 7) ; do ip netns exec vrouter$i ifconfig veth | grep HW ; done
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f0
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f1
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f2
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f3
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f4
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f5
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f6
+// veth      Link encap:Ethernet  HWaddr 32:26:0a:2e:cc:f7
 // root@de5cf35cd169:~#
 //
-// root@de5cf35cd169:~# ifconfig | grep vmx_link
+// root@de5cf35cd169:~# ifconfig | grep vmx_link | grep HW
 // vmx_link0 Link encap:Ethernet  HWaddr 32:26:0a:2e:bb:f0
 // vmx_link1 Link encap:Ethernet  HWaddr 32:26:0a:2e:bb:f1
 // vmx_link2 Link encap:Ethernet  HWaddr 32:26:0a:2e:bb:f2
@@ -161,7 +160,7 @@ const std::string sbIPv4RttName   = "rtt0";
 //
 //                  |
 //       ,-----.    |
-//   tapX|     |    |
+//  vethX|     |    |
 //   ----o     o----o----------
 //       |_____|    |pX / ge-0/0/X
 //      vmx_linkX   |
@@ -222,42 +221,32 @@ const std::string VMX_LINK5_IP_ADDR_STR = "103.30.50.2";
 const std::string VMX_LINK6_IP_ADDR_STR = "103.30.60.2";
 const std::string VMX_LINK7_IP_ADDR_STR = "103.30.70.2";
 
-const std::string TAP0_NAME_STR = "tap0";
-const std::string TAP1_NAME_STR = "tap1";
-const std::string TAP2_NAME_STR = "tap2";
-const std::string TAP3_NAME_STR = "tap3";
-const std::string TAP4_NAME_STR = "tap4";
-const std::string TAP5_NAME_STR = "tap5";
-const std::string TAP6_NAME_STR = "tap6";
-const std::string TAP7_NAME_STR = "tap7";
+const std::string PEER0_MAC_STR = "32:26:0a:2e:cc:f0";
+const std::string PEER1_MAC_STR = "32:26:0a:2e:cc:f1";
+const std::string PEER2_MAC_STR = "32:26:0a:2e:cc:f2";
+const std::string PEER3_MAC_STR = "32:26:0a:2e:cc:f3";
+const std::string PEER4_MAC_STR = "32:26:0a:2e:cc:f4";
+const std::string PEER5_MAC_STR = "32:26:0a:2e:cc:f5";
+const std::string PEER6_MAC_STR = "32:26:0a:2e:cc:f6";
+const std::string PEER7_MAC_STR = "32:26:0a:2e:cc:f7";
 
-const std::string TAP0_MAC_STR = "32:26:0a:2e:cc:f0";
-const std::string TAP1_MAC_STR = "32:26:0a:2e:cc:f1";
-const std::string TAP2_MAC_STR = "32:26:0a:2e:cc:f2";
-const std::string TAP3_MAC_STR = "32:26:0a:2e:cc:f3";
-const std::string TAP4_MAC_STR = "32:26:0a:2e:cc:f4";
-const std::string TAP5_MAC_STR = "32:26:0a:2e:cc:f5";
-const std::string TAP6_MAC_STR = "32:26:0a:2e:cc:f6";
-const std::string TAP7_MAC_STR = "32:26:0a:2e:cc:f7";
-
-const std::string TAP0_IP_ADDR_STR = "103.30.00.3";
-const std::string TAP1_IP_ADDR_STR = "103.30.10.3";
-const std::string TAP2_IP_ADDR_STR = "103.30.20.3";
-const std::string TAP3_IP_ADDR_STR = "103.30.30.3";
-const std::string TAP4_IP_ADDR_STR = "103.30.40.3";
-const std::string TAP5_IP_ADDR_STR = "103.30.50.3";
-const std::string TAP6_IP_ADDR_STR = "103.30.60.3";
-const std::string TAP7_IP_ADDR_STR = "103.30.70.3";
+const std::string PEER0_IP_ADDR_STR = "103.30.00.3";
+const std::string PEER1_IP_ADDR_STR = "103.30.10.3";
+const std::string PEER2_IP_ADDR_STR = "103.30.20.3";
+const std::string PEER3_IP_ADDR_STR = "103.30.30.3";
+const std::string PEER4_IP_ADDR_STR = "103.30.40.3";
+const std::string PEER5_IP_ADDR_STR = "103.30.50.3";
+const std::string PEER6_IP_ADDR_STR = "103.30.60.3";
+const std::string PEER7_IP_ADDR_STR = "103.30.70.3";
 
 AfiClient *aficlient;
 std::string gTestTimeStr;
 std::string gtestOutputDirName;
 std::string gtestExpectedDirName = "GTEST_EXPECTED";
-std::string tsharkBinary = "/usr/bin/tshark"; 
+std::string tsharkBinary = "/usr/bin/tshark";
 std::atomic<bool> test_complete(false);
 
 void getTimeStr(std::string &timeStr);
-void tapIfReadPkts(std::string &tapName);
 static void tStartTsharkCapture(std::string &tcName,
                                 std::string &tName,
                                 std::vector<std::string> &interfaces);
@@ -289,7 +278,7 @@ static void stopTsharkCapture(void);
 //  |                   Sandbox                      |
 //  +------------------------------------------------+
 //
- 
+
 TEST(AFI, SandboxOpen)
 {
     int ret = 0;
@@ -315,12 +304,12 @@ TEST(AFI, SandboxOpen)
 //                  +-------------------------------+
 //                  |                               |
 //       ,-----.    |                               |
-//   tap0|     |    |              list             |
-//   ----o     o----o--------->+----------+         | 
+//  veth0|     |    |              list             |
+//   ----o     o----o--------->+----------+         |
 //       |_____|    |p0        | counter  |         |
 //      vmx_link0   |ge-0/0/0  +----------+         |
-//         /\       |          |       ---|-------->o 
-//         ||       |          +----------+       p1| 
+//         /\       |          |       ---|-------->o
+//         ||       |          +----------+       p1|
 //         ||       |                       ge-0/0/1|
 //         ||       |      Sandbox                  |
 //         ||       +-------------------------------+
@@ -340,7 +329,7 @@ TEST(AFI, CounterNode)
 
     AftNodeToken cntrToken  = aficlient->addCounterNode();
 
-    AftNodeToken outputPortToken = 
+    AftNodeToken outputPortToken =
                  aficlient->getOuputPortToken(SB_P1_PORT_INDEX);
 
     AftTokenVector tokVec;
@@ -353,7 +342,7 @@ TEST(AFI, CounterNode)
     EXPECT_EQ(0, ret);
 
 
-    ret = SendRawEth(VMX_LINK0_NAME_STR, 
+    ret = SendRawEth(VMX_LINK0_NAME_STR,
                      TestPacketLibrary::TEST_PKT_ID_PUNT_ICMP_ECHO);
     EXPECT_EQ(0, ret);
 
@@ -366,7 +355,7 @@ TEST(AFI, CounterNode)
 //                  +---------------------+
 //                  |                     |
 //       ,-----.    |                     |
-//   tap0|     |    |                     |
+//  veth0|     |    |                     |
 //   ----o     o----o----->[Discard]      |
 //       |_____|    |p0                   |
 //      vmx_link0   |ge-0/0/0             |
@@ -377,11 +366,11 @@ TEST(AFI, CounterNode)
 //    Input Packet
 //
 
-TEST(AFI, DisacrdNode)
+TEST(AFI, DiscardNode)
 {
     int ret = 0;
     std::string tcName = "AFI";
-    std::string tName  = "DisacrdNode";
+    std::string tName  = "DiscardNode";
 
 
     AftNodeToken token  = aficlient->addDiscardNode();
@@ -391,8 +380,8 @@ TEST(AFI, DisacrdNode)
     std::vector<std::string> capture_ifs;
     capture_ifs.push_back(GE_0_0_0_VMX_IF_NAME);
     tStartTsharkCapture(tcName, tName, capture_ifs);
- 
-    ret = SendRawEth(VMX_LINK0_NAME_STR, 
+
+    ret = SendRawEth(VMX_LINK0_NAME_STR,
                      TestPacketLibrary::TEST_PKT_ID_PUNT_ICMP_ECHO);
     EXPECT_EQ(0, ret);
     stopTsharkCapture();
@@ -401,14 +390,14 @@ TEST(AFI, DisacrdNode)
 
 //
 // Sandbox hostpath: Punt
-//                                      AFI Client 
-//                                          ^ 
+//                                      AFI Client
+//                                          ^
 //                                          |
 //                                          |
 //                  +------------------+    |
 //                  |                  |    |
 //       ,-----.    |                  |    |
-//   tap0|     |    |                  |    |
+//  veth0|     |    |                  |    |
 //   ----o     o----o----------------->o----'
 //       |_____|    |p0            punt|
 //      vmx_link0   |ge-0/0/0          |
@@ -419,8 +408,8 @@ TEST(AFI, DisacrdNode)
 //    Input Packet
 //
 
-void 
-readPuntedPkts(std::string &ctx, int num_pkts, 
+void
+readPuntedPkts(std::string &ctx, int num_pkts,
                TestPacketLibrary::TestPacketId tcPktNum)
 {
     int ret;
@@ -465,9 +454,9 @@ TEST(AFI, SandboxHostpathPunt)
     capture_ifs.push_back(GE_0_0_0_VMX_IF_NAME);
 
     tStartTsharkCapture(tcName, tName, capture_ifs);
- 
+
     test_complete.store(false);
-    boost::thread hpRecvThread(boost::bind(&readPuntedPkts, boost::ref(tName), 
+    boost::thread hpRecvThread(boost::bind(&readPuntedPkts, boost::ref(tName),
              num_pkts_to_send, TestPacketLibrary::TEST_PKT_ID_PUNT_ICMP_ECHO));
     //
     // Set up punt for packets incoming on port p0
@@ -479,10 +468,10 @@ TEST(AFI, SandboxHostpathPunt)
 
 
     for (int i = 0; i < num_pkts_to_send; i++) {
-        ret = SendRawEth(VMX_LINK0_NAME_STR, 
+        ret = SendRawEth(VMX_LINK0_NAME_STR,
                          TestPacketLibrary::TEST_PKT_ID_PUNT_ICMP_ECHO);
         EXPECT_EQ(0, ret);
-        sleep(1); 
+        sleep(1);
     }
 
     test_complete.store(true);
@@ -500,15 +489,15 @@ TEST(AFI, SandboxHostpathPunt)
 //
 // Sandbox Hostpath: Layer 2 inject
 //
-//            AFI Client 
+//            AFI Client
 //            injects
 //            L2 packet
-//               |             Expected Packet
-//               |                      /\
-//               |                      ||
-//   +-----------|---------+            ||
-//   |           |         |            ||
-//   |           |         |    ,-----. tap1
+//               |              Expected Packet
+//               |                       /\
+//               |                       ||
+//   +-----------|---------+             ||
+//   |           |         |             ||
+//   |           |         |    ,-----. veth1
 //   |           |         |    |     o-----
 //   |           `-------->o----o     |
 //   |                   p1|    |_____|
@@ -517,8 +506,8 @@ TEST(AFI, SandboxHostpathPunt)
 //   |                     |
 //   |     Sandbox         |
 //   +---------------------+
-//               
-//    
+//
+//
 
 TEST(AFI, SandboxL2Inject)
 {
@@ -532,14 +521,11 @@ TEST(AFI, SandboxL2Inject)
     capture_ifs.push_back(GE_0_0_1_VMX_IF_NAME);
 
     tStartTsharkCapture(tcName, tName, capture_ifs);
-    
-    std::string tapName = TAP1_NAME_STR;
 
     test_complete.store(false);
-    boost::thread tapThread(boost::bind(&tapIfReadPkts, boost::ref(tapName)));
 
     TestPacket* testPkt = testPacketLibrary.getTestPacket(
-                        TestPacketLibrary::TEST_PKT_ID_IPV4_ECHO_REQ_TO_TAP1);
+                        TestPacketLibrary::TEST_PKT_ID_IPV4_ECHO_REQ_TO_PEER1);
 
 
 #define PKT_BUFF_SIZE 1500
@@ -554,18 +540,10 @@ TEST(AFI, SandboxL2Inject)
                                         (uint8_t *)pkt_buff, pkt_len);
 
         EXPECT_EQ(0, ret);
-        sleep(1); 
+        sleep(1);
     }
 
     test_complete.store(true);
-
-    if (tapThread.timed_join( boost::posix_time::seconds(5))) {
-        std::cout<<"\nDone!\n";
-    } else {
-        std::cerr<<"\nTimed out!\n";
-    }
-
-    EXPECT_EQ(0, ret);
 
     stopTsharkCapture();
     tVerifyPackets(tcName, tName, capture_ifs);
@@ -573,13 +551,13 @@ TEST(AFI, SandboxL2Inject)
 
 //
 // IPv4 Routing
-//                                                               Expected Packet
-//                                                                        /\
-//                                                                        ||
-//                  |                                        |            ||
-//                  |                                        |            ||
-//       ,-----.    |                /\                      |    ,-----. tap3
-//   tap2|     |    |               /  \                     |    |     o-----
+//                                                                Expected Packet
+//                                                                         /\
+//                                                                         ||
+//                  |                                        |             ||
+//                  |                                        |             ||
+//       ,-----.    |                /\                      |    ,-----. veth3
+//  veth2|     |    |               /  \                     |    |     o-----
 //   ----o     o----o------------->/ R1-\---->[EthEncap]---->o----o     |
 //       |_____|    |p2           /______\                 p3|    |_____|
 //      vmx_link2   |ge-0/0/2   Routing Table        ge-0/0/3|    vmx_link3
@@ -610,10 +588,7 @@ TEST(AFI, IPv4Routing)
 
     ASSERT_TRUE(aficlient != NULL);
 
-    std::string tapName = TAP3_NAME_STR;
-
     test_complete.store(false);
-    boost::thread tapThread(boost::bind(&tapIfReadPkts, boost::ref(tapName)));
 
     //
     // Create Routing Table
@@ -631,7 +606,7 @@ TEST(AFI, IPv4Routing)
     rtTargetPortToken  = aficlient->getOuputPortToken(SB_P3_PORT_INDEX);
 
     etherEncapToken = aficlient->addEtherEncapNode(
-                                             TAP3_MAC_STR,     // dst mac
+                                             PEER3_MAC_STR,    // dst mac
                                              GE_0_0_3_MAC_STR, // src mac
                                              "0",
                                              "0",
@@ -644,38 +619,31 @@ TEST(AFI, IPv4Routing)
     const int num_pkts_to_send = 1;
     for (int i = 0; i < num_pkts_to_send; i++) {
         ret = SendRawEth(VMX_LINK2_NAME_STR,
-                  TestPacketLibrary::TEST_PKT_ID_IPV4_ROUTER_ICMP_ECHO_TO_TAP3);
+                  TestPacketLibrary::TEST_PKT_ID_IPV4_ROUTER_ICMP_ECHO_TO_PEER3);
         EXPECT_EQ(0, ret);
-        sleep(1); 
+        sleep(1);
     }
 
     test_complete.store(true);
 
-    if (tapThread.timed_join( boost::posix_time::seconds(5))) {
-        std::cout<<"\nDone!\n";
-    } else {
-        std::cerr<<"\nTimed out!\n";
-    }
-
-    EXPECT_EQ(0, ret);
     stopTsharkCapture();
     tVerifyPackets(tcName, tName, capture_ifs);
 }
 
 //
 // MPLS L2VPN Encap
-//                                                                                                
-//                                                                                             
-//                  |                                                   |                 
-//                  |                                                   |                
-//       ,-----.    |                                                   |                         
-//   tap4|     |    |          Index Table                              |   Expected Packet      
-//   ----o     o----o--------->+--------+                               |            /\
-//       |_____|    |p4        |        |                               |            ||        
-//      vmx_link4   |ge-0/0/4  +--------+                               |            ||       
-//         /\       |          .        .                               |            ||      
-//         ||       |          +--------+                               |    ,-----. tap5   
-//         ||       |          +--------+                               |    |     o-----  
+//
+//
+//                  |                                                   |
+//                  |                                                   |
+//       ,-----.    |                                                   |
+//  veth4|     |    |          Index Table                              |    Expected Packet
+//   ----o     o----o--------->+--------+                               |             /\
+//       |_____|    |p4        |        |                               |             ||
+//      vmx_link4   |ge-0/0/4  +--------+                               |             ||
+//         /\       |          .        .                               |             ||
+//         ||       |          +--------+                               |    ,-----. veth5
+//         ||       |          +--------+                               |    |     o-----
 //         ||       |          |   ll   |-->[LableEncap]-->[EthEncap]-->o----o     |
 //    Input Packet  |          +--------+                             p5|    |_____|
 //                  |          +--------+                       ge-0/0/5|    vmx_link5
@@ -702,12 +670,9 @@ TEST(AFI, MPLS_L2VPN_Encap)
 
     ASSERT_TRUE(aficlient != NULL);
 
-    std::string tapName = TAP5_NAME_STR;
-
     test_complete.store(false);
-    boost::thread tapThread(boost::bind(&tapIfReadPkts, boost::ref(tapName)));
 
-    AftNodeToken iTableToken =  aficlient->createIndexTable(vlan1_field_name, 
+    AftNodeToken iTableToken =  aficlient->createIndexTable(vlan1_field_name,
                                                    INDEX_TABLE_NUM_ENTRIES);
 
     ret = aficlient->setInputPortNextNode(SB_P4_PORT_INDEX,
@@ -718,7 +683,7 @@ TEST(AFI, MPLS_L2VPN_Encap)
 
 
     AftNodeToken etherEncapToken = aficlient->addEtherEncapNode(
-                                             TAP5_MAC_STR,     // dst mac
+                                             PEER5_MAC_STR,    // dst mac
                                              GE_0_0_5_MAC_STR, // src mac
                                              "0",
                                              "0",
@@ -729,12 +694,12 @@ TEST(AFI, MPLS_L2VPN_Encap)
     // Outer label: 1000002
     // Inner label: 16
     //
-    labelEncapToken = aficlient->addLabelEncap("1000002", 
-                                               "16", 
+    labelEncapToken = aficlient->addLabelEncap("1000002",
+                                               "16",
                                                etherEncapToken);
 
-    ret = aficlient->addIndexTableEntry(iTableToken, 
-                                        MPLS_L2VPN_VLAN_ID, 
+    ret = aficlient->addIndexTableEntry(iTableToken,
+                                        MPLS_L2VPN_VLAN_ID,
                                         labelEncapToken);
 
     const int num_pkts_to_send = 1;
@@ -742,34 +707,27 @@ TEST(AFI, MPLS_L2VPN_Encap)
         ret = SendRawEth(VMX_LINK4_NAME_STR,
                   TestPacketLibrary::TEST_PKT_ID_IPV4_VLAN);
         EXPECT_EQ(0, ret);
-        sleep(1); 
+        sleep(1);
     }
 
     test_complete.store(true);
 
-    if (tapThread.timed_join( boost::posix_time::seconds(5))) {
-        std::cout<<"\nDone!\n";
-    } else {
-        std::cerr<<"\nTimed out!\n";
-    }
-
-    EXPECT_EQ(0, ret);
     stopTsharkCapture();
     tVerifyPackets(tcName, tName, capture_ifs);
 }
 
 //
 // MPLS L2VPN Decap
-//                  |                                            |                 
-//                  |                                            |                
-//       ,-----.    |                                            |                         
-//   tap5|     |    |                        Index Table         |   Expected Packet      
-//   ----o     o----o--------[LableDecap]--->+--------+          |            /\
-//       |_____|    |p5                      |        |          |            ||        
-//      vmx_link5   |ge-0/0/5                +--------+          |            ||       
-//         /\       |                        .        .          |            ||      
-//         ||       |                        +--------+          |    ,-----. tap4   
-//         ||       |                        +--------+          |    |     o-----  
+//                  |                                            |
+//                  |                                            |
+//       ,-----.    |                                            |
+//  veth5|     |    |                        Index Table         |    Expected Packet
+//   ----o     o----o--------[LableDecap]--->+--------+          |             /\
+//       |_____|    |p5                      |        |          |             ||
+//      vmx_link5   |ge-0/0/5                +--------+          |             ||
+//         /\       |                        .        .          |             ||
+//         ||       |                        +--------+          |    ,-----. veth4
+//         ||       |                        +--------+          |    |     o-----
 //         ||       |                        |   ll   |--------->o----o     |
 //    Input Packet  |                        +--------+        p4|    |_____|
 //                  |                        +--------+  ge-0/0/4|    vmx_link4
@@ -789,13 +747,10 @@ TEST(AFI, MPLS_L2VPN_Decap)
 
     ASSERT_TRUE(aficlient != NULL);
 
-    std::string tapName = TAP4_NAME_STR;
-
     test_complete.store(false);
-    boost::thread tapThread(boost::bind(&tapIfReadPkts, boost::ref(tapName)));
 
     AftNodeToken iTableToken =  aficlient->createIndexTable(
-                                                   vlan1_field_name, 
+                                                   vlan1_field_name,
                                                    INDEX_TABLE_NUM_ENTRIES);
 
     AftNodeToken labelDecapToken = aficlient->addLabelDecap(iTableToken);
@@ -806,8 +761,8 @@ TEST(AFI, MPLS_L2VPN_Decap)
     AftNodeToken outputPortToken = aficlient->getOuputPortToken(
                                                    SB_P4_PORT_INDEX);
 
-    ret = aficlient->addIndexTableEntry(iTableToken, 
-                                        MPLS_L2VPN_VLAN_ID, 
+    ret = aficlient->addIndexTableEntry(iTableToken,
+                                        MPLS_L2VPN_VLAN_ID,
                                         outputPortToken);
 
     const int num_pkts_to_send = 1;
@@ -815,23 +770,16 @@ TEST(AFI, MPLS_L2VPN_Decap)
         ret = SendRawEth(VMX_LINK5_NAME_STR,
                   TestPacketLibrary::TEST_PKT_ID_MPLS_L2VLAN);
         EXPECT_EQ(0, ret);
-        sleep(1); 
+        sleep(1);
     }
 
     test_complete.store(true);
 
-    if (tapThread.timed_join( boost::posix_time::seconds(5))) {
-        std::cout<<"\nDone!\n";
-    } else {
-        std::cerr<<"\nTimed out!\n";
-    }
-
-    EXPECT_EQ(0, ret);
     stopTsharkCapture();
     tVerifyPackets(tcName, tName, capture_ifs);
 }
 
-void 
+void
 getTimeStr(std::string &timeStr)
 {
 
@@ -846,22 +794,8 @@ getTimeStr(std::string &timeStr)
   timeStr = buffer;
 }
 
-void 
-tapIfReadPkts(std::string &tapName)
-{
-
-    int ret = 0;
-    TapIf tapIf(tapName.c_str());
-    int tap_fd = tapIf.init();
-    EXPECT_GT(tap_fd, 0);
-
-    while (!test_complete.load()) {
-        ret = tapIf.ifRead();
-    }
-}
-
-static std::string 
-getShellCmdOutput(std::string &cmd) 
+static std::string
+getShellCmdOutput(std::string &cmd)
 {
     std::array<char, 128> buff;
 
@@ -875,7 +809,7 @@ getShellCmdOutput(std::string &cmd)
     return output;
 }
 
-static void 
+static void
 tStartTsharkCapture (std::string &tcName,
                       std::string &tName,
                       std::vector<std::string> &interfaces)
@@ -884,7 +818,7 @@ tStartTsharkCapture (std::string &tcName,
     std::string cmd, cmd_output;
     std::string tDir = tcName + "/" + tName;
     std::string tOutputDir = gtestOutputDirName + "/" + tDir;
-  
+
     cmd = "mkdir -p " + tOutputDir;
     ret = system(cmd.c_str());
     EXPECT_EQ(0, ret);
@@ -893,7 +827,7 @@ tStartTsharkCapture (std::string &tcName,
 
         std::string ifPcapFile = tOutputDir + "/" + interface  + ".pcap";
         std::string ifstderrFile = tOutputDir + "/" + interface  + ".stderr";
-        std::string tsharkCmd = tsharkBinary + " -i " + interface + 
+        std::string tsharkCmd = tsharkBinary + " -i " + interface + " -f 'not arp'" +
                              " -w " + ifPcapFile + " 2> " + ifstderrFile + " < /dev/null &";
 
         ret = system(tsharkCmd.c_str());
@@ -909,7 +843,7 @@ tStartTsharkCapture (std::string &tcName,
 
         //cmd = "rm -f " + ifstderrFile;
         //cmd_output = getShellCmdOutput(cmd);
-    } 
+    }
 
     //
     // tshark takes somet to run
@@ -964,7 +898,7 @@ tVerifyPackets (std::string &tcName,
             // No diff
             std::cout << "SUCCESS: Actual packets matches with expected packets" << std::endl;
         }
-    } 
+    }
 }
 
 static
@@ -982,9 +916,9 @@ void stopTsharkCapture (void)
 
 //
 // gtest main
-// 
+//
 int main(int argc, char **argv) {
-    
+
     getTimeStr(gTestTimeStr);
     std::cout<<gTestTimeStr;
 

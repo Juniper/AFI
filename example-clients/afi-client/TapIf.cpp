@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <linux/if_packet.h>
 
 #include <string.h>
 #include <net/if.h>
@@ -64,8 +65,8 @@
 // @return  file descriptor
 //
 
-int 
-TapIf::tapAlloc(char *dev, int flags) 
+int
+TapIf::tapAlloc(std::string ifName, int flags)
 {
 
   struct ifreq ifr;
@@ -75,28 +76,39 @@ TapIf::tapAlloc(char *dev, int flags)
 
   snprintf(clonedev, DEVICE_FILE_NAME_MAX_LEN, "%s", "/dev/net/tun");
 
-  if( (fd = open(clonedev , O_RDWR)) < 0 ) { 
+  if( (fd = open(clonedev , O_RDWR)) < 0 ) {
     perror("Opening /dev/net/tun");
-    return fd; 
+    return fd;
   }
 
   memset(&ifr, 0, sizeof(ifr));
-
   ifr.ifr_flags = flags;
+  strncpy(ifr.ifr_name, ifName.c_str(), IFNAMSIZ);
 
-  if (*dev) {
-    strncpy(ifr.ifr_name, dev, IFNAMSIZ);
-  }
-
-  if( (err = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0 ) { 
+  if( (err = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0 ) {
     perror("ioctl(TUNSETIFF)");
     close(fd);
     return err;
   }
 
-  strcpy(dev, ifr.ifr_name);
+  return fd;
+}
 
-  return fd; 
+//
+// @fn
+// initialized
+//
+// @brief
+// Check if the interface is initialized or not.
+//
+// @param[in] void
+// @return  1 - Yes, 0 - No
+//
+
+int
+TapIf::initialized(void)
+{
+    return _tapFd != -1;
 }
 
 //
@@ -110,47 +122,77 @@ TapIf::tapAlloc(char *dev, int flags)
 // @return  0 - Success, -1 - Error
 //
 
-int 
+int
 TapIf::ifRead(void)
 {
-    int ret;
-    int maxfd;
-    uint16_t nread;
-    fd_set rd_set;
+    uint16_t n;
     enum { max_length = 2000 };
     char data[max_length];
+    int raw_socket;
+    struct sockaddr_ll sa;
 
-    FD_ZERO(&rd_set);
-    FD_SET(_tapFd, &rd_set);
-    maxfd = _tapFd;
-
-    struct timeval tv = {1, 0};   // 1 seconds!
-    std::cout << "Calling select for fd " << std::dec<< _tapFd ;
-    std::cout << "(interface "<< _ifName << ")"<< std::endl;
-    ret = select(maxfd + 1, &rd_set, NULL, NULL, &tv);
-
-    while (ret < 0 && errno == EINTR){
-        std::cout << " select returned  " << ret << std::endl;
-        ret = select(maxfd + 1, &rd_set, NULL, NULL, &tv);
-        sleep(1);
+    raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (raw_socket < 0) {
+        perror("socket");
+        exit(1);
     }
 
-    if (FD_ISSET(_tapFd, &rd_set)) {
-        /* data from tun/tap: just read it and write it to the network */
+    std::stringstream outputIfName;
+    outputIfName << "veth" << _portIndex;
 
-        nread = read(_tapFd, data, max_length);
-        if (nread < 0){ 
-            perror("Reading data");
+    memset(&sa, 0, sizeof (struct sockaddr_ll));
+    sa.sll_family = AF_PACKET;
+    sa.sll_halen = ETH_ALEN;
+    sa.sll_ifindex = if_nametoindex(outputIfName.str().c_str());
+
+    while (1) {
+        n = read(_tapFd, data, max_length);
+        if (n < 0){
+            perror("read");
             exit(1);
         }
 
-        std::cout << "Read " << std::dec << nread << " bytes from the interface " ;
-        std::cout <<  "(fd " << std::dec<< _tapFd << "name "<< _ifName << ")"<< std::endl;
-        pktTrace("Packet data", data, nread);
+        std::cout << "Read " << std::dec << n << " bytes from the interface " ;
+        std::cout <<  "(fd " << std::dec<< _tapFd << " name "<< _ifName << ")"<< std::endl;
+        pktTrace("Packet data", data, n);
 
-    } else {
+        n = sendto(raw_socket, data, n, 0, (struct sockaddr *) &sa,
+                   sizeof (struct sockaddr_ll));
+        if (n < 0){
+            perror("sendto");
+            exit(1);
+        }
+    }
+
+    return 0;
+}
+
+//
+// @fn
+// ifWrite
+//
+// @brief
+// Writes data to interface
+//
+// @param[in]
+//     size Number of bytes to write
+// @param[in]
+//     data Buffer with actual data
+// @return  0 - Success, -1 - Error
+//
+
+int
+TapIf::ifWrite(int size, uint8_t *data)
+{
+    int n = write(_tapFd, data, size);
+    if (n < 0) {
+        perror("write");
         return -1;
     }
+
+    std::cout << "Wrote " << std::dec << n << " bytes to the interface " ;
+    std::cout <<  "(fd " << std::dec<< _tapFd << " name "<< _ifName << ")"<< std::endl;
+    pktTrace("Packet data", (char *)data, n);
 
     return 0;
 }

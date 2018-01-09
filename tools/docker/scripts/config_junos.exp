@@ -72,7 +72,7 @@ expect "$re_cli_config_prompt" { send "show | compare | no-more\r" }
 #
 # Do not add anything after commit.
 # Commit changes the prompts so expect minimal prompts
-# 
+#
 expect "$re_cli_config_prompt" { send "commit\r" }
 expect "#" { send "exit\r" }
 expect ">" { send "exit\r" }

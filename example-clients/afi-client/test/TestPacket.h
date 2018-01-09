@@ -29,7 +29,7 @@
 #include "../Utils.h"
 
 #define MAC_ADDR_LEN            6
-#define ETHER_PAYLOAD_BUF_SIZE	5000
+#define ETHER_PAYLOAD_BUF_SIZE  5000
 
 class TestPacket {
 public:
@@ -37,117 +37,117 @@ public:
     //
     //
     //
-	int setSrcMac(const std::string &mac) {
-		int i;
+    int setSrcMac(const std::string &mac) {
+        int i;
         std::vector<std::string> mac_sub_strings;
         boost::split(mac_sub_strings, mac, boost::is_any_of(":"));
 
-		for (i = 0; i < MAC_ADDR_LEN; i++) {
+        for (i = 0; i < MAC_ADDR_LEN; i++) {
             _srcMac[i] = std::strtoull(mac_sub_strings.at(i).c_str(), NULL, 16);
         }
     }
 
-	int *getSrcMac(void) {
-	    return _srcMac;
-	}
+    int *getSrcMac(void) {
+        return _srcMac;
+    }
 
     //
     //
     //
-	int setDstMac(const std::string &mac) {
-		int i;
+    int setDstMac(const std::string &mac) {
+        int i;
         std::vector<std::string> mac_sub_strings;
         boost::split(mac_sub_strings, mac, boost::is_any_of(":"));
 
-		for (i = 0; i < MAC_ADDR_LEN; i++) {
+        for (i = 0; i < MAC_ADDR_LEN; i++) {
             _dstMac[i] = std::strtoull(mac_sub_strings.at(i).c_str(), NULL, 16);
         }
     }
 
-	int *getDstMac(void) {
-	    return _dstMac;
-	}
+    int *getDstMac(void) {
+        return _dstMac;
+    }
 
     //
-	//
-	//
-	int getEtherType(void) {
+    //
+    //
+    int getEtherType(void) {
         return _etherType;
     }
 
-	void setEtherType(int  etherType) {
+    void setEtherType(int  etherType) {
         _etherType = etherType;
     }
 
     //
-	//
-	//
-	int setEtherPayloadStr(const std::string &etherPayloadStr) {
+    //
+    //
+    int setEtherPayloadStr(const std::string &etherPayloadStr) {
         strncpy(_etherPayload, etherPayloadStr.c_str(), ETHER_PAYLOAD_BUF_SIZE);
-		_etherPayload[ETHER_PAYLOAD_BUF_SIZE - 1] = '\0';
+        _etherPayload[ETHER_PAYLOAD_BUF_SIZE - 1] = '\0';
     }
 
-	char *getEtherPayloadStr(void) {
-	      return _etherPayload;
-	}
+    char *getEtherPayloadStr(void) {
+          return _etherPayload;
+    }
 
 
-	int getEtherPacket(char *pktData, int pktDataBuffLen) {
+    int getEtherPacket(char *pktData, int pktDataBuffLen) {
 #define ETH_HEADER_LEN    14
         int i = 0;
 
         if (pktDataBuffLen < ETH_HEADER_LEN) {
-		    return -1;
-		}
+            return -1;
+        }
 
-		for (i = 0; i < MAC_ADDR_LEN; i++) {
+        for (i = 0; i < MAC_ADDR_LEN; i++) {
             pktData[i] = _dstMac[i];
         }
 
-		for (i = 0; i < MAC_ADDR_LEN; i++) {
+        for (i = 0; i < MAC_ADDR_LEN; i++) {
             pktData[MAC_ADDR_LEN + i] = _srcMac[i];
         }
 
         pktData[ETH_HEADER_LEN - 2] = ((_etherType >> 8) & 0xFF);
         pktData[ETH_HEADER_LEN - 1] = ((_etherType) & 0xFF);
 
-		int pktDataLen = convertHexPktStrToPkt(_etherPayload, 
-				  							   &pktData[ETH_HEADER_LEN], 
-											   pktDataBuffLen - ETH_HEADER_LEN);
-	    return (ETH_HEADER_LEN + pktDataLen);
-	}
+        int pktDataLen = convertHexPktStrToPkt(_etherPayload,
+                                               &pktData[ETH_HEADER_LEN],
+                                               pktDataBuffLen - ETH_HEADER_LEN);
+        return (ETH_HEADER_LEN + pktDataLen);
+    }
 
 private:
-	int  _srcMac[MAC_ADDR_LEN];
-	int  _dstMac[MAC_ADDR_LEN];
+    int  _srcMac[MAC_ADDR_LEN];
+    int  _dstMac[MAC_ADDR_LEN];
 
-	// 
-	// ETH_P_IP =  0x0800
-	//
-	//
-	int  _etherType;
-	char _etherPayload[ETHER_PAYLOAD_BUF_SIZE];
+    //
+    // ETH_P_IP =  0x0800
+    //
+    //
+    int  _etherType;
+    char _etherPayload[ETHER_PAYLOAD_BUF_SIZE];
 };
 
 
 class TestPacketLibrary {
 public:
-    //  
+    //
     // Test Packed Id.
-    //  
-	typedef enum {
+    //
+    typedef enum {
         TestPackerIdInvalid = 0,
-		TEST_PKT_ID_IPV4_ECHO_REQ_TO_TAP1,
-		TEST_PKT_ID_IPV4_ECHO_REQ_TO_TAP2,
-		TEST_PKT_ID_IPV4_ROUTER_ICMP_ECHO_TO_TAP3,
-        TEST_PKT_ID_PUNT_ICMP_ECHO, 
-		TEST_PKT_ID_IPV4_VLAN,
-		TEST_PKT_ID_MPLS_L2VLAN,
-        TestPackerIdMax, 
-	} TestPacketId;
+        TEST_PKT_ID_IPV4_ECHO_REQ_TO_PEER1,
+        TEST_PKT_ID_IPV4_ECHO_REQ_TO_PEER2,
+        TEST_PKT_ID_IPV4_ROUTER_ICMP_ECHO_TO_PEER3,
+        TEST_PKT_ID_PUNT_ICMP_ECHO,
+        TEST_PKT_ID_IPV4_VLAN,
+        TEST_PKT_ID_MPLS_L2VLAN,
+        TestPackerIdMax,
+    } TestPacketId;
 
 
- 
+
     TestPacketLibrary() {
         buildTestPacketLibrary();
     }
@@ -159,7 +159,7 @@ public:
     //
     //
     //
-	TestPacket* getTestPacket(TestPacketId testPktNum) {
+    TestPacket* getTestPacket(TestPacketId testPktNum) {
         return _testPacketLibrary[testPktNum];
 
     }
@@ -175,7 +175,7 @@ private:
 
 
 //
-// Test Packet Library 
+// Test Packet Library
 //
 extern TestPacketLibrary testPacketLibrary;
 

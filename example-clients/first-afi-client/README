@@ -31,5 +31,5 @@ Compilation Steps
 Running the example client
 ==========================
 # cd afi/example-clients/afi-client
-# ./run-first-afi-client  
+# ./run-first-afi-client
 

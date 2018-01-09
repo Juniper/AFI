@@ -1,5 +1,5 @@
 #
-# README 
+# README
 #
 # Advanced Forwarding Interface : AFI client examples
 #
@@ -37,22 +37,71 @@ E.g.
 ./run-afi-client 128.0.0.16:50051 128.0.0.16:9002
 
 
+Description
+==========================
+
+This AFI client does nothing other than initializing a transport
+connection to the server and providing an interactive interface where
+the user can configure an AFI sandbox by using a limited set of commands.
+
+The goal is to provide a starting point where users can test the base
+functionality of AFI before having to write any code.
+
+
 Example run
 ==========================
 
 This example run build following forwarding path topology
- 
-  |                                        | 
-  |                                        | 
-  |                /\                      | 
-  |               /  \                     | 
-  o------------->/ R1-\---->[EthEncap]---->o
-  |p2           /______\                 p4| 
-  |           Routing Table                | 
-  |         R1 = 103.30.40.0/24            |
-  |                                        | 
+
   |                                        |
- 
+  |                                        |
+  |                /\                      |
+  |               /  \                     |
+  o------------->/ R1-\---->[EthEncap]---->o
+  |[p0..p7]     /______\           [p0..p7]|
+  |           Routing Table                |
+  |         R1 =  103.30.0.0/24            |
+  |              103.30.10.0/24            |
+  |              103.30.20.0/24            |
+  |              103.30.30.0/24            |
+  |              103.30.40.0/24            |
+  |              103.30.50.0/24            |
+  |              103.30.60.0/24            |
+  |              103.30.70.0/24            |
+  |                                        |
+  |                                        |
+
+By the end of this step-by-step, vMX/AFI will be configured to perform
+routing for all directly connected networks.
+
+1 - Telnet to the VCP VM and, using Junos CLI, configure an AFI sandbox named 'green':
+
+# telnet localhost 8601
+Trying ::1...
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+
+root@:~ # cli
+root@vcp-vm> configure
+root@vcp-vm# set forwarding-options forwarding-sandbox green size medium
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p0 interface ge-0/0/0
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p1 interface ge-0/0/1
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p2 interface ge-0/0/2
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p3 interface ge-0/0/3
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p4 interface ge-0/0/4
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p5 interface ge-0/0/5
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p6 interface ge-0/0/6
+root@vcp-vm# set forwarding-options forwarding-sandbox green port p7 interface ge-0/0/7
+root@vcp-vm# commit
+root@vcp-vm# exit
+root@vcp-vm> exit
+
+NOTE: this step is not required when running on the AFI docker container
+provided in this repository.
+
+2 - Run the AFI client and attach to the sandbox created in the previous step:
+
 root@495874a2ed47:~/afi/example-clients/afi-client# ./run-afi-client 128.0.0.16:50051 128.0.0.16:9002
 D0425 21:24:10.218603225   13998 ev_posix.c:101]             Using polling engine: poll
 
@@ -86,19 +135,273 @@ index: 5 port name: p5 token: 15
 index: 6 port name: p6 token: 16
 index: 7 port name: p7 token: 17
 index: 8 port name: punt token: 18
-____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f4 32:26:0a:2e:cc:f3 0 0 14
-Adding ether encap node
-Ether encap nexthop token: 19
-____AFIClient____ >
-____AFIClient____ >
+
+3 - Create a Route Lookup node:
+
 ____AFIClient____ > create-rtt rtt1 18
 Creating routing table...
-Route table node token: 20
-Route table node token: 20
-____AFIClient____ > add-route 20 103.30.40.0/24 19
-Adding route...
-Adding route 103.30.40.0/24 ---> Node token 19
-____AFIClient____ > set-input-port-next-node 2 20
-Attaching next token to input port
-____AFIClient____ >
+Route table node token: 19
 
+The last argument is the default target token. This is the token that
+is used when a packet hits the Route Lookup node and no route is found
+for its destination. Non-IP packets (e.g. ARP) never match any route
+and always use the default target token. By using the punt token, 18,
+all unmatched packets are punted instead of being dropped.
+
+4 - Create a route for each directly attached router:
+
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f0 32:26:0a:2e:cc:f0 0 0 10
+Adding ether encap node
+Ether encap nexthop token: 20
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f1 32:26:0a:2e:cc:f1 0 0 11
+Adding ether encap node
+Ether encap nexthop token: 21
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f2 32:26:0a:2e:cc:f2 0 0 12
+Adding ether encap node
+Ether encap nexthop token: 22
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f3 32:26:0a:2e:cc:f3 0 0 13
+Adding ether encap node
+Ether encap nexthop token: 23
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f4 32:26:0a:2e:cc:f4 0 0 14
+Adding ether encap node
+Ether encap nexthop token: 24
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f5 32:26:0a:2e:cc:f5 0 0 15
+Adding ether encap node
+Ether encap nexthop token: 25
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f6 32:26:0a:2e:cc:f6 0 0 16
+Adding ether encap node
+Ether encap nexthop token: 26
+____AFIClient____ > add-ether-encap 32:26:0a:2e:aa:f7 32:26:0a:2e:cc:f7 0 0 17
+Adding ether encap node
+Ether encap nexthop token: 27
+____AFIClient____ > add-route 19 103.30.00.0/24 20
+Adding route 103.30.00.0/24 ---> Node token 20
+____AFIClient____ > add-route 19 103.30.10.0/24 21
+Adding route 103.30.10.0/24 ---> Node token 21
+____AFIClient____ > add-route 19 103.30.20.0/24 22
+Adding route 103.30.20.0/24 ---> Node token 22
+____AFIClient____ > add-route 19 103.30.30.0/24 23
+Adding route 103.30.30.0/24 ---> Node token 23
+____AFIClient____ > add-route 19 103.30.40.0/24 24
+Adding route 103.30.40.0/24 ---> Node token 24
+____AFIClient____ > add-route 19 103.30.50.0/24 25
+Adding route 103.30.50.0/24 ---> Node token 25
+____AFIClient____ > add-route 19 103.30.60.0/24 26
+Adding route 103.30.60.0/24 ---> Node token 26
+____AFIClient____ > add-route 19 103.30.70.0/24 27
+Adding route 103.30.70.0/24 ---> Node token 27
+
+Note that AFI can't resolve IP addresses into MAC addresses. All
+intelligence should be in the control/management plane. So, when creating
+a route, we need to specify the MAC address of the nexthop instead of
+its IP.
+
+5 - Connect all ports to the Route Lookup node:
+
+____AFIClient____ > set-input-port-next-node 0 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 1 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 2 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 3 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 4 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 5 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 6 19
+Attaching next token to input port
+____AFIClient____ > set-input-port-next-node 7 19
+Attaching next token to input port
+
+6 - Test connectivity:
+
+First, ping vrouter1 from vrouter0:
+
+# ip netns exec vrouter0 ping -c 3 103.30.10.3
+PING 103.30.10.3 (103.30.10.3) 56(84) bytes of data.
+From 103.30.0.3 icmp_seq=1 Destination Host Unreachable
+From 103.30.0.3 icmp_seq=2 Destination Host Unreachable
+From 103.30.0.3 icmp_seq=3 Destination Host Unreachable
+
+--- 103.30.10.3 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2055ms
+
+The ping didn't work because vrouter0 is trying to resolve vrouter1's
+MAC address but is not receiving any ARP replies.
+
+What is happening is that the ARP packets are hitting the default target
+token in the Route Lookup node and being punted. Since we're not doing
+anything with the punted packets, the ARP Requests are effectively
+being dropped.
+
+One solution to this problem is to implement the ARP protocol in the AFI
+client. The problem with this approach is that it's a lot of work to do,
+not to mention that other protocols like NDP and ICMP would need to be
+implemented as well.
+
+One other solution is to use the Linux kernel to answer the ARP Requests
+for us. To do that, we're going to use tap interfaces in the host to
+create a communication channel between the AFI client and the Linux
+network stack.  In the next step we're going to describe this solution
+in detail.
+
+In the meanwhile, for the impatient, it's possible to configure static
+IPv4 neighbors in the vrouters to make ping work:
+
+# ip netns exec vrouter0 ip neighbor replace 103.30.00.1 dev veth lladdr 32:26:0A:2E:AA:F0
+# ip netns exec vrouter1 ip neighbor replace 103.30.10.1 dev veth lladdr 32:26:0A:2E:AA:F1
+# ip netns exec vrouter2 ip neighbor replace 103.30.20.1 dev veth lladdr 32:26:0A:2E:AA:F2
+# ip netns exec vrouter3 ip neighbor replace 103.30.30.1 dev veth lladdr 32:26:0A:2E:AA:F3
+# ip netns exec vrouter4 ip neighbor replace 103.30.40.1 dev veth lladdr 32:26:0A:2E:AA:F4
+# ip netns exec vrouter5 ip neighbor replace 103.30.50.1 dev veth lladdr 32:26:0A:2E:AA:F5
+# ip netns exec vrouter6 ip neighbor replace 103.30.60.1 dev veth lladdr 32:26:0A:2E:AA:F6
+# ip netns exec vrouter7 ip neighbor replace 103.30.70.1 dev veth lladdr 32:26:0A:2E:AA:F7
+
+Now all vrouters can ping themselves:
+
+# ip netns exec vrouter0 ping -c 3 103.30.10.3
+PING 103.30.10.3 (103.30.10.3) 56(84) bytes of data.
+64 bytes from 103.30.10.3: icmp_seq=1 ttl=64 time=0.703 ms
+64 bytes from 103.30.10.3: icmp_seq=2 ttl=64 time=0.604 ms
+64 bytes from 103.30.10.3: icmp_seq=3 ttl=64 time=0.624 ms
+
+--- 103.30.10.3 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2055ms
+rtt min/avg/max/mdev = 0.604/0.643/0.703/0.051 ms
+
+Note that we should use the MAC addresses specified in vmx.conf when
+sending packets to vMX.
+
+7 - Using tap interfaces:
+
+Attach each port to its associated tap interface:
+
+____AFIClient____ > punt-to-linux 0 tap0
+____AFIClient____ > punt-to-linux 1 tap1
+____AFIClient____ > punt-to-linux 2 tap2
+____AFIClient____ > punt-to-linux 3 tap3
+____AFIClient____ > punt-to-linux 4 tap4
+____AFIClient____ > punt-to-linux 5 tap5
+____AFIClient____ > punt-to-linux 6 tap6
+____AFIClient____ > punt-to-linux 7 tap7
+
+Each tap interface is hardwired to its associated vMX data plane interface.
+
+Consider the ARP protocol as an example. Whenever an ARP Request is
+received and punted, the packet is written on the tap interface associated
+with the port where the packet was received. The Linux kernel will then
+process the ARP Request and send an ARP Reply in response. The AFI client
+will then read this packet from the tap interface and forward it out to
+the originator of the ARP Request.
+
+The same logic applies to NDP, ICMP, routing protocols, etc. In other
+words, by using tap interfaces the Linux kernel acts as a slow path for
+control packets (and vMX/AFI remains as the fast path).
+
+Note that, for ARP to work, the tap interfaces should be given the same
+MAC addresses of the associated vMX interfaces. This is already taken care
+of in the 'config_tap_interfaces.sh' script provided in this repository.
+
+8 - Adding host routes to the vMX addresses:
+
+Even using tap interfaces, it's still not possible to ping the vMX
+interfaces themselves. The reason is that the /24 routes we configured
+earlier encompass the vMX addresses too. So if we try to ping 103.30.0.1
+from vrouter0, the ICMP Requests will be echoed back.
+
+The solution to this problem is to add a host route (/32 or /128) to
+each address configured on vMX and point the route to the punt token:
+
+____AFIClient____ > add-route 19 103.30.00.1/32 18
+Adding route 103.30.00.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.10.1/32 18
+Adding route 103.30.10.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.20.1/32 18
+Adding route 103.30.20.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.30.1/32 18
+Adding route 103.30.30.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.40.1/32 18
+Adding route 103.30.40.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.50.1/32 18
+Adding route 103.30.50.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.60.1/32 18
+Adding route 103.30.60.1/32 ---> Node token 18
+____AFIClient____ > add-route 19 103.30.70.1/32 18
+Adding route 103.30.70.1/32 ---> Node token 18
+
+Now pinging vMX works as expected:
+
+# ip netns exec vrouter0 ping -c 3 103.30.0.1
+PING 103.30.0.1 (103.30.0.1) 56(84) bytes of data.
+64 bytes from 103.30.0.1: icmp_seq=1 ttl=64 time=0.484 ms
+64 bytes from 103.30.0.1: icmp_seq=2 ttl=64 time=0.509 ms
+64 bytes from 103.30.0.1: icmp_seq=3 ttl=64 time=0.375 ms
+
+--- 103.30.0.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2037ms
+rtt min/avg/max/mdev = 0.375/0.456/0.509/0.058 ms
+
+These host routes are also necessary for any other protocol that makes
+use of unicast packets, like BGP and even ARP for receiving ARP replies.
+
+Using the tcpdump command it's possible to see all packets flowing
+through the AFI client and the Linux kernel:
+
+# tcpdump -i tap0 -n -l
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on tap0, link-type EN10MB (Ethernet), capture size 262144 bytes
+17:11:41.084945 ARP, Request who-has 103.30.0.1 tell 103.30.0.3, length 28
+17:11:41.084952 ARP, Reply 103.30.0.1 is-at 32:26:0a:2e:aa:f0, length 28
+17:11:41.085226 IP 103.30.0.3 > 103.30.0.1: ICMP echo request, id 13036, seq 1, length 64
+17:11:41.085237 IP 103.30.0.1 > 103.30.0.3: ICMP echo reply, id 13036, seq 1, length 64
+
+---
+
+For reference, below is a summarized list of all commands used during
+this step-by-step:
+
+# ./run-afi-client 128.0.0.16:50051 128.0.0.16:9002
+open-sb green 8
+create-rtt rtt1 18
+add-ether-encap 32:26:0a:2e:aa:f0 32:26:0a:2e:cc:f0 0 0 10
+add-ether-encap 32:26:0a:2e:aa:f1 32:26:0a:2e:cc:f1 0 0 11
+add-ether-encap 32:26:0a:2e:aa:f2 32:26:0a:2e:cc:f2 0 0 12
+add-ether-encap 32:26:0a:2e:aa:f3 32:26:0a:2e:cc:f3 0 0 13
+add-ether-encap 32:26:0a:2e:aa:f4 32:26:0a:2e:cc:f4 0 0 14
+add-ether-encap 32:26:0a:2e:aa:f5 32:26:0a:2e:cc:f5 0 0 15
+add-ether-encap 32:26:0a:2e:aa:f6 32:26:0a:2e:cc:f6 0 0 16
+add-ether-encap 32:26:0a:2e:aa:f7 32:26:0a:2e:cc:f7 0 0 17
+add-route 19 103.30.00.0/24 20
+add-route 19 103.30.10.0/24 21
+add-route 19 103.30.20.0/24 22
+add-route 19 103.30.30.0/24 23
+add-route 19 103.30.40.0/24 24
+add-route 19 103.30.50.0/24 25
+add-route 19 103.30.60.0/24 26
+add-route 19 103.30.70.0/24 27
+set-input-port-next-node 0 19
+set-input-port-next-node 1 19
+set-input-port-next-node 2 19
+set-input-port-next-node 3 19
+set-input-port-next-node 4 19
+set-input-port-next-node 5 19
+set-input-port-next-node 6 19
+set-input-port-next-node 7 19
+punt-to-linux 0 tap0
+punt-to-linux 1 tap1
+punt-to-linux 2 tap2
+punt-to-linux 3 tap3
+punt-to-linux 4 tap4
+punt-to-linux 5 tap5
+punt-to-linux 6 tap6
+punt-to-linux 7 tap7
+add-route 19 103.30.00.1/32 18
+add-route 19 103.30.10.1/32 18
+add-route 19 103.30.20.1/32 18
+add-route 19 103.30.30.1/32 18
+add-route 19 103.30.40.1/32 18
+add-route 19 103.30.50.1/32 18
+add-route 19 103.30.60.1/32 18
+add-route 19 103.30.70.1/32 18

@@ -27,55 +27,56 @@ source "$MY_DIR/cmn.sh"
 
 me=`basename "$0"`
 
-MAC_ADDR_PREFIX="32:26:0A:2E:CC:F"
+NETNS_NAME="vrouter"
+MAC_ADDR_VMX="32:26:0A:2E:AA:FX"
+MAC_ADDR_PEER="32:26:0A:2E:CC:FX"
+IPV4_ADDR_VMX="103.30.X0.1"
+IPV4_ADDR_PEER="103.30.X0.3"
+IPV4_PREFIXLEN="24"
+
 COUNTER=0
 while [  $COUNTER -lt 8 ]; do
+    netns=$NETNS_NAME$COUNTER
 
-    if $ETHTOOL tap$COUNTER | $GREP -q "Link detected"; then
-        log_debug "interface tap$COUNTER exists"
-    else
-        run_command "ip tuntap add mode tap tap$COUNTER"
-    fi   
+    # Remove old network namespace and associated virtual interfaces
+    run_command "ip netns del $netns 2>/dev/null || true"
+    run_command "ip link del tap$COUNTER 2>/dev/null || true"
+    let COUNTER+=1
+done
 
-    #
-    # ip link set tap0 address 32:26:0A:2E:CC:F0
-    #
-    run_command "ip link set tap$COUNTER address $MAC_ADDR_PREFIX$COUNTER"
+COUNTER=0
+while [  $COUNTER -lt 8 ]; do
+    netns=$NETNS_NAME$COUNTER
+    mac_vmx=${MAC_ADDR_VMX/X/$COUNTER}
+    mac_peer=${MAC_ADDR_PEER/X/$COUNTER}
+    ipv4_vmx=${IPV4_ADDR_VMX/X/$COUNTER}
+    ipv4_peer=${IPV4_ADDR_PEER/X/$COUNTER}
+
+    # Create new network namespace
+    run_command "ip netns add $netns"
+    run_command "ip netns exec $netns ip link set dev lo up"
+
+    # Add veth interface pair
+    run_command "ip link add veth$COUNTER type veth peer name veth"
+    run_command "ip link set dev veth$COUNTER up"
+    run_command "ip link set dev veth netns $netns up"
+
+    # Add detached tap interface for punting control packets to Linux
+    run_command "ip tuntap add tap$COUNTER mode tap"
     run_command "ip link set tap$COUNTER up"
-    run_command "ifconfig tap$COUNTER promisc up"
+
+    # Set MAC addresses
+    run_command "ip link set tap$COUNTER address $mac_vmx"
+    run_command "ip netns exec $netns ip link set veth address $mac_peer"
+
+    # Set IP addresses
+    run_command "ip addr add $ipv4_vmx/$IPV4_PREFIXLEN dev tap$COUNTER"
+    run_command "ip netns exec $netns ip addr add $ipv4_peer/$IPV4_PREFIXLEN dev veth"
+
+    # Add default route in the vrouters
+    run_command "ip netns exec $netns ip route add default via $ipv4_vmx"
 
     let COUNTER+=1
 done
-
-IP_ADDR_PREFIX="103.30."
-IP_ADDR_POSTFIX="0.3"
-IP_ADDR_MASK="255.255.255.0"
-
-COUNTER=0
-while [  $COUNTER -lt 8 ]; do
-    #
-    # ifconfig tap0 103.30.00.3 netmask 255.255.255.0 up 
-    #
-    run_command "ifconfig tap$COUNTER $IP_ADDR_PREFIX$COUNTER$IP_ADDR_POSTFIX netmask $IP_ADDR_MASK up"
-    run_command "ifconfig tap$COUNTER"
-    let COUNTER+=1
-done
-
-exit 0
-
-run_command "brctl show"
-
-#for interface in tap0 tap1 tap2 tap3 tap4 tap5 tap6 tap7
-#do 
-#    echo Deleting interface $interface
-#    ip link delete $interface
-#done
-
-
-#for interface in tap0 tap1 tap2 tap3 tap4 tap5 tap6 tap7
-#do 
-#    echo Clear all IP addresses configured on interface $interface
-#    ip addr flush dev $interface
-#done
 
 exit 0
