@@ -107,8 +107,16 @@ and restart Docker service (sudo service docker restart)
 
 The option '--bip=$DOCKER0_BRIDGE_IP' makes sure that Docker container uses $DOCKER0_BRIDGE_IP as IP for "docker0" bridge.
 
-NOTE: 
+> NOTE: 
 By default, docker uses location '/var/lib/docker' to install images. You can use '-g <location>' option to specify the docker image installation location.  Please make sure that the location has around 200GB of space available.
+
+When running on systemd based systems (e.g. Ubuntu 15.04 and beyond), Docker uses a different configuration file (/etc/docker/daemon.json). Edit this file as follows:
+```
+{
+  "bip": "172.18.0.1/16"
+  "graph": "/path/to/docker/images",
+}
+```
 
 <br>
 
